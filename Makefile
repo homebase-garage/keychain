@@ -11,8 +11,6 @@ Y ?= $(shell date +'%Y')
 PREFIX ?= /usr/local
 COMPLETIONSDIR ?= $(PREFIX)/share/bash-completion/completions
 
-TARBALL_CONTENTS=keychain README.md ChangeLog.md COPYING.txt MAINTAINERS.txt keychain.pod keychain.1 keychain.spec
-
 all: keychain.1 keychain keychain.spec
 
 .PHONY : tmpclean
@@ -61,17 +59,19 @@ keychain: keychain.sh keychain.txt VERSION MAINTAINERS.txt
 keychain.txt: keychain.pod
 	pod2text keychain.pod keychain.txt
 
-keychain-$V.tar.gz: $(TARBALL_CONTENTS)
-	mkdir keychain-$V
-	cp $(TARBALL_CONTENTS) keychain-$V
-	/bin/tar czvf keychain-$V.tar.gz keychain-$V
-	rm -rf keychain-$V
-	ls -l keychain-$V.tar.gz
+dist/keychain-$V.tar.gz: keychain keychain.1 keychain.spec
+	mkdir -p dist
+	rm -rf dist/keychain-$V
+	git archive --format=tar --prefix=keychain-$V/ HEAD | tar -xf - -C dist/
+	cp keychain keychain.1 keychain.spec dist/keychain-$V/
+	tar -C dist -czf dist/keychain-$V.tar.gz keychain-$V
+	rm -rf dist/keychain-$V
+	ls -l dist/keychain-$V.tar.gz
 
 # --- Release Automation Helpers ---
 .PHONY: release release-refresh
 
-RELEASE_ASSETS=keychain-$V.tar.gz keychain keychain.1
+RELEASE_ASSETS=dist/keychain-$V.tar.gz keychain keychain.1
 
 # "release" will orchestrate a tagged release with CI artifact validation & confirmation.
 release: $(RELEASE_ASSETS)
